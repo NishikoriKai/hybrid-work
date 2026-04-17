@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>行銷企劃部｜混合辦公管理</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --bg2: #f5f5f3; --bg3: #eeede8;
+    --text: #1a1a18; --text2: #6b6b68; --text3: #9a9a96;
+    --border: rgba(0,0,0,0.10); --border2: rgba(0,0,0,0.18);
+    --blue: #185FA5; --blue-bg: #E6F1FB; --blue-text: #0C447C;
+    --green: #1D9E75; --green-bg: #E1F5EE; --green-text: #0F6E56;
+    --amber: #EF9F27; --amber-bg: #FAEEDA; --amber-text: #854F0B;
+    --red: #E24B4A; --red-bg: #FCEBEB; --red-text: #A32D2D;
+    --purple-bg: #EEEDFE; --purple-text: #3C3489;
+    --radius: 8px; --radius-lg: 12px;
+    --shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a; --bg2: #242422; --bg3: #2c2c2a;
+      --text: #f0efe8; --text2: #9a9a96; --text3: #6b6b68;
+      --border: rgba(255,255,255,0.10); --border2: rgba(255,255,255,0.18);
+      --blue-bg: #0c2240; --blue-text: #85B7EB;
+      --green-bg: #0a2a1e; --green-text: #5DCAA5;
+      --amber-bg: #2a1e06; --amber-text: #FAC775;
+      --red-bg: #2a0e0e; --red-text: #F09595;
+      --purple-bg: #1a1830; --purple-text: #AFA9EC;
+    }
+  }
+  body { font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; background: var(--bg3); color: var(--text); font-size: 15px; line-height: 1.5; min-height: 100vh; }
+
+  /* ── Layout ── */
+  .app { max-width: 980px; margin: 0 auto; padding: 0 1rem 4rem; }
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 0 1.5rem; border-bottom: 0.5px solid var(--border); margin-bottom: 1.5rem; }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo { width: 38px; height: 38px; background: #1a5fd6; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .logo svg { width: 20px; height: 20px; fill: white; }
+  .app-title { font-size: 17px; font-weight: 600; }
+  .app-sub { font-size: 12px; color: var(--text3); margin-top: 1px; }
+  .dept-badge { font-size: 12px; background: var(--blue-bg); color: var(--blue-text); padding: 4px 10px; border-radius: 99px; }
+
+  /* ── Tabs ── */
+  .tab-bar { display: flex; gap: 3px; background: var(--bg2); border-radius: var(--radius); padding: 4px; margin-bottom: 1.5rem; border: 0.5px solid var(--border); }
+  .tab { flex: 1; padding: 7px 6px; border: none; background: transparent; border-radius: 6px; font-size: 12px; font-weight: 400; cursor: pointer; color: var(--text2); transition: all 0.15s; white-space: nowrap; text-align: center; }
+  .tab.active { background: var(--bg); color: var(--text); font-weight: 600; box-shadow: var(--shadow); }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── Cards ── */
+  .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; }
+
+  /* ── Rule box ── */
+  .rule-box { background: var(--bg2); border-radius: var(--radius); padding: 0.85rem 1rem; margin-bottom: 1.25rem; font-size: 12px; color: var(--text2); line-height: 1.8; border: 0.5px solid var(--border); }
+  .rule-box strong { color: var(--text); font-weight: 600; }
+
+  /* ── Apply layout ── */
+  .apply-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; align-items: start; }
+  @media (max-width: 640px) { .apply-layout { grid-template-columns: 1fr; } }
+
+  /* ── Form ── */
+  .form-row { margin-bottom: 1rem; }
+  .form-row:last-child { margin-bottom: 0; }
+  .field-label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 5px; font-weight: 500; }
+  select, input[type="date"], input[type="text"] {
+    width: 100%; padding: 9px 11px; border: 0.5px solid var(--border2);
+    border-radius: var(--radius); font-size: 14px;
+    background: var(--bg); color: var(--text);
+    outline: none; transition: border-color 0.15s;
+  }
+  select:focus, input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(24,95,165,0.12); }
+  .seg-control { display: flex; gap: 5px; }
+  .seg-btn { flex: 1; padding: 8px 4px; border: 0.5px solid var(--border2); background: transparent; border-radius: var(--radius); font-size: 13px; cursor: pointer; color: var(--text2); text-align: center; transition: all 0.12s; }
+  .seg-btn:hover { background: var(--bg2); }
+  .seg-btn.sel { background: var(--blue); color: #fff; border-color: var(--blue); font-weight: 600; }
+  .submit-btn { width: 100%; padding: 10px; background: var(--blue); color: white; border: none; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 0.75rem; transition: background 0.15s; }
+  .submit-btn:hover:not(:disabled) { background: var(--blue-text); }
+  .submit-btn:disabled { background: var(--bg3); color: var(--text3); cursor: not-allowed; border: 0.5px solid var(--border); }
+
+  /* ── Quota card ── */
+  .quota-idle { text-align: center; padding: 2.5rem 1rem; color: var(--text3); font-size: 13px; line-height: 2; }
+  .quota-idle .qi-icon { font-size: 30px; margin-bottom: 8px; }
+  .quota-date-label { font-size: 13px; color: var(--text2); margin-bottom: 14px; font-weight: 500; }
+  .quota-big { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
+  .quota-num { font-size: 42px; font-weight: 700; line-height: 1; }
+  .quota-unit { font-size: 14px; color: var(--text2); }
+  .quota-sub { font-size: 12px; color: var(--text3); margin-bottom: 14px; }
+  .meter-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .meter-bar { flex: 1; height: 7px; background: var(--bg3); border-radius: 99px; overflow: hidden; }
+  .meter-fill { height: 100%; border-radius: 99px; transition: width 0.4s ease; }
+  .meter-label { font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .quota-note { border-radius: 7px; padding: 8px 12px; font-size: 12px; margin-top: 8px; }
+  .quota-ok { background: var(--green-bg); color: var(--green-text); }
+  .quota-warn { background: var(--amber-bg); color: var(--amber-text); }
+  .quota-full { background: var(--red-bg); color: var(--red-text); }
+  .quota-na { background: var(--bg2); color: var(--text3); }
+  .quota-divider { border: none; border-top: 0.5px solid var(--border); margin: 12px 0; }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+  .pill { display: flex; align-items: center; gap: 4px; padding: 3px 8px 3px 4px; border-radius: 99px; font-size: 12px; }
+  .pill-av { width: 17px; height: 17px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; }
+  .pill-approved { background: var(--green-bg); color: var(--green-text); }
+  .pill-pending { background: var(--amber-bg); color: var(--amber-text); }
+  .mini-label { font-size: 11px; color: var(--text3); margin-top: 10px; margin-bottom: 4px; font-weight: 500; }
+
+  /* ── Calendar ── */
+  .cal-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
+  .cal-nav { display: flex; align-items: center; gap: 10px; }
+  .cal-nav-btn { border: 0.5px solid var(--border2); background: var(--bg); width: 32px; height: 32px; border-radius: var(--radius); cursor: pointer; font-size: 15px; color: var(--text2); display: flex; align-items: center; justify-content: center; transition: background 0.12s; }
+  .cal-nav-btn:hover { background: var(--bg2); }
+  .cal-month-title { font-size: 16px; font-weight: 600; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text2); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--border); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .cal-head { background: var(--bg2); padding: 8px 4px; text-align: center; font-size: 12px; font-weight: 600; color: var(--text2); }
+  .cal-cell { background: var(--bg); min-height: 84px; padding: 6px; cursor: pointer; transition: background 0.1s; }
+  .cal-cell:hover { background: var(--bg2); }
+  .cal-cell.other { opacity: 0.3; pointer-events: none; }
+  .cal-cell.today { background: var(--blue-bg); }
+  .cal-cell.today .day-n { color: var(--blue); }
+  .cal-cell.wknd, .cal-cell.wknd:hover { opacity: 0.35; cursor: default; pointer-events: none; }
+  .cal-cell.mon-cell { background: #fffbf0; }
+  @media (prefers-color-scheme: dark) { .cal-cell.mon-cell { background: #1e1a06; } }
+  .cal-cell.selected { outline: 2px solid var(--blue); outline-offset: -2px; }
+  .day-n { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .no-wfh-tag { font-size: 9px; background: var(--red-bg); color: var(--red-text); border-radius: 3px; padding: 0 4px; display: inline-block; margin-bottom: 2px; }
+  .chip { font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chip-approved { background: var(--green-bg); color: var(--green-text); }
+  .chip-pending { background: var(--amber-bg); color: var(--amber-text); }
+  .chip-rejected { background: var(--red-bg); color: var(--red-text); }
+  .more-hint { font-size: 10px; color: var(--text3); }
+
+  /* ── Day Detail ── */
+  .day-detail-card { margin-top: 1rem; }
+  .detail-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .detail-title { font-size: 15px; font-weight: 600; }
+  .detail-quota { font-size: 12px; color: var(--text2); }
+  .app-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 0.5px solid var(--border); }
+  .app-row:last-child { border-bottom: none; }
+  .app-info { display: flex; align-items: center; gap: 10px; }
+  .av { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+  .app-name { font-size: 14px; font-weight: 500; }
+  .app-meta { font-size: 12px; color: var(--text2); }
+  .act-btns { display: flex; gap: 6px; }
+  .btn-approve { border: 0.5px solid var(--green); background: transparent; color: var(--green-text); border-radius: 6px; padding: 5px 11px; font-size: 12px; cursor: pointer; font-weight: 500; }
+  .btn-approve:hover { background: var(--green-bg); }
+  .btn-reject { border: 0.5px solid var(--red); background: transparent; color: var(--red-text); border-radius: 6px; padding: 5px 11px; font-size: 12px; cursor: pointer; font-weight: 500; }
+  .btn-reject:hover { background: var(--red-bg); }
+  .status-pill { font-size: 12px; padding: 3px 10px; border-radius: 99px; font-weight: 500; }
+  .empty-hint { text-align: center; color: var(--text3); font-size: 13px; padding: 2rem; }
+
+  /* ── Members ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+  .stat-card { background: var(--bg2); border-radius: var(--radius); padding: 1rem; text-align: center; border: 0.5px solid var(--border); }
+  .stat-num { font-size: 26px; font-weight: 700; }
+  .stat-lbl { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .member-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .member-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 14px; display: flex; align-items: center; gap: 10px; position: relative; }
+  .del-btn { position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border: none; background: transparent; cursor: pointer; color: var(--text3); font-size: 15px; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.1s; }
+  .del-btn:hover { background: var(--bg2); color: var(--red-text); }
+  .m-name { font-size: 14px; font-weight: 600; }
+  .m-role { font-size: 12px; color: var(--text2); }
+  .add-form { background: var(--bg2); border-radius: var(--radius-lg); padding: 1rem 1.25rem; display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; border: 0.5px solid var(--border); }
+  .add-form .fg { flex: 1; min-width: 130px; }
+  .add-form input { width: 100%; padding: 8px 10px; border: 0.5px solid var(--border2); border-radius: var(--radius); font-size: 13px; background: var(--bg); color: var(--text); }
+  .add-btn { padding: 8px 16px; background: var(--blue); color: white; border: none; border-radius: var(--radius); font-size: 13px; cursor: pointer; font-weight: 600; white-space: nowrap; }
+  .add-btn:hover { background: var(--blue-text); }
+  .sec-title { font-size: 12px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+
+  /* ── Log ── */
+  .log-toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+  .log-toolbar select, .log-toolbar input[type="text"] { padding: 7px 10px; font-size: 13px; }
+  .log-toolbar select { width: auto; }
+  .log-toolbar input[type="text"] { flex: 1; min-width: 120px; }
+  .log-btn { padding: 7px 13px; border-radius: var(--radius); font-size: 12px; cursor: pointer; font-weight: 500; }
+  .log-export { border: 0.5px solid var(--border2); background: transparent; color: var(--text2); }
+  .log-export:hover { background: var(--bg2); }
+  .log-clear { border: 0.5px solid var(--red); background: transparent; color: var(--red-text); }
+  .log-clear:hover { background: var(--red-bg); }
+  .log-count { font-size: 12px; color: var(--text3); margin-bottom: 8px; }
+  .log-wrap { border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; overflow-x: auto; }
+  .log-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 600px; }
+  .log-table th { background: var(--bg2); padding: 9px 12px; text-align: left; font-size: 11px; font-weight: 600; color: var(--text2); border-bottom: 0.5px solid var(--border); white-space: nowrap; text-transform: uppercase; letter-spacing: 0.04em; }
+  .log-table td { padding: 9px 12px; border-bottom: 0.5px solid var(--border); color: var(--text); vertical-align: middle; }
+  .log-table tr:last-child td { border-bottom: none; }
+  .log-table tr:hover td { background: var(--bg2); }
+  .log-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .lb-apply { background: var(--blue-bg); color: var(--blue-text); }
+  .lb-approve { background: var(--green-bg); color: var(--green-text); }
+  .lb-reject { background: var(--red-bg); color: var(--red-text); }
+  .lb-cancel { background: var(--bg3); color: var(--text2); }
+  .lb-madd { background: var(--purple-bg); color: var(--purple-text); }
+  .lb-mdel { background: var(--amber-bg); color: var(--amber-text); }
+  .log-new { animation: logflash 1.6s ease; }
+  @keyframes logflash { 0%{background:var(--blue-bg)} 100%{background:transparent} }
+
+  /* ── DB status ── */
+  .db-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text3); }
+  .db-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); }
+  .db-dot.ok { background: var(--green); }
+  .db-dot.err { background: var(--red); }
+
+  /* ── Toast ── */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a1a18; color: #f0efe8; padding: 10px 20px; border-radius: 99px; font-size: 13px; font-weight: 500; z-index: 9999; display: none; white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+  .toast.err { background: var(--red); color: white; }
+  .toast.show { display: block; animation: fadeup 0.2s ease; }
+  @keyframes fadeup { from{opacity:0;transform:translateX(-50%) translateY(8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+
+  /* ── Setup screen ── */
+  .setup-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg3); padding: 2rem; }
+  .setup-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: 16px; padding: 2.5rem; max-width: 520px; width: 100%; }
+  .setup-logo { width: 48px; height: 48px; background: #1a5fd6; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; }
+  .setup-logo svg { width: 26px; height: 26px; fill: white; }
+  .setup-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .setup-sub { font-size: 14px; color: var(--text2); margin-bottom: 2rem; line-height: 1.7; }
+  .setup-field { margin-bottom: 1.25rem; }
+  .setup-field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .setup-field input { width: 100%; padding: 10px 12px; border: 0.5px solid var(--border2); border-radius: var(--radius); font-size: 14px; background: var(--bg); color: var(--text); }
+  .setup-field .hint { font-size: 12px; color: var(--text3); margin-top: 4px; line-height: 1.6; }
+  .setup-btn { width: 100%; padding: 11px; background: var(--blue); color: white; border: none; border-radius: var(--radius); font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 0.5rem; }
+  .setup-btn:hover { background: var(--blue-text); }
+  .setup-step { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 1rem; }
+  .step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--blue); color: white; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .step-text { font-size: 13px; color: var(--text2); line-height: 1.7; }
+  .step-text a { color: var(--blue-text); }
+  .step-text code { background: var(--bg2); padding: 1px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; color: var(--text); }
+  .setup-divider { border: none; border-top: 0.5px solid var(--border); margin: 1.5rem 0; }
+  .loading-overlay { position: fixed; inset: 0; background: var(--bg3); display: flex; align-items: center; justify-content: center; z-index: 9999; flex-direction: column; gap: 12px; }
+  .loading-spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 13px; color: var(--text3); }
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loading">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">連線中...</div>
+</div>
+
+<!-- Setup Screen (shown when no config) -->
+<div class="setup-screen" id="setup-screen" style="display:none">
+  <div class="setup-card">
+    <div class="setup-logo">
+      <svg viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+    </div>
+    <div class="setup-title">首次設定</div>
+    <div class="setup-sub">請先完成 Supabase 資料庫設定，只需要做一次，設定完畢後所有人即可共用同一份資料。</div>
+
+    <div class="setup-step">
+      <div class="step-num">1</div>
+      <div class="step-text">前往 <a href="https://supabase.com" target="_blank">supabase.com</a> 免費註冊帳號，並建立一個新 Project（名稱隨意，例如 <code>hybrid-work</code>）</div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">2</div>
+      <div class="step-text">進入 Project → 左側選單點 <code>SQL Editor</code> → 把下方 SQL 貼上執行（建立資料表）</div>
+    </div>
+    <div style="background:var(--bg2);border-radius:8px;padding:12px;font-family:monospace;font-size:11px;color:var(--text2);line-height:1.8;margin-bottom:1.25rem;border:0.5px solid var(--border);white-space:pre-wrap;overflow-x:auto;">create table members (
+  id bigint primary key generated always as identity,
+  name text not null,
+  role text,
+  created_at timestamptz default now()
+);
+create table applications (
+  id bigint primary key generated always as identity,
+  member_id bigint references members(id) on delete cascade,
+  date text not null,
+  slot text not null,
+  status text default 'pending',
+  note text default '',
+  created_at timestamptz default now()
+);
+create table logs (
+  id bigint primary key generated always as identity,
+  ts text not null,
+  actor text not null,
+  action text not null,
+  target text,
+  date text,
+  slot text,
+  note text,
+  created_at timestamptz default now()
+);
+-- 開放讀寫（公開存取）
+alter table members enable row level security;
+alter table applications enable row level security;
+alter table logs enable row level security;
+create policy "allow all" on members for all using (true) with check (true);
+create policy "allow all" on applications for all using (true) with check (true);
+create policy "allow all" on logs for all using (true) with check (true);</div>
+
+    <div class="setup-step">
+      <div class="step-num">3</div>
+      <div class="step-text">進入 Project Settings → <code>API</code>，複製 <strong>Project URL</strong> 和 <strong>anon public key</strong> 填入下方</div>
+    </div>
+
+    <div class="setup-divider"></div>
+
+    <div class="setup-field">
+      <label>Supabase Project URL</label>
+      <input type="text" id="cfg-url" placeholder="https://xxxxxxxxxxxxxx.supabase.co">
+      <div class="hint">格式如：https://abcdefghij.supabase.co</div>
+    </div>
+    <div class="setup-field">
+      <label>Supabase anon public key</label>
+      <input type="text" id="cfg-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+      <div class="hint">在 Project Settings → API → Project API Keys 找到 <strong>anon public</strong></div>
+    </div>
+    <div class="setup-field">
+      <label>部門名稱</label>
+      <input type="text" id="cfg-dept" placeholder="行銷企劃部" value="行銷企劃部">
+    </div>
+    <button class="setup-btn" onclick="saveConfig()">完成設定，進入系統</button>
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="main-app" style="display:none">
+  <div class="app">
+    <div class="header">
+      <div class="header-left">
+        <div class="logo">
+          <svg viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        </div>
+        <div>
+          <div class="app-sub">鉅亨買基金</div>
+          <div class="app-title">混合辦公管理</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="db-status"><div class="db-dot ok" id="db-dot"></div><span id="db-label">已連線</span></div>
+        <div class="dept-badge" id="dept-badge">行銷企劃部</div>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab active" onclick="switchTab('apply')">✏️ 申請</button>
+      <button class="tab" onclick="switchTab('calendar')">📅 月曆</button>
+      <button class="tab" onclick="switchTab('members')">👥 成員</button>
+      <button class="tab" onclick="switchTab('log')">🗂 操作記錄</button>
+    </div>
+
+    <!-- APPLY -->
+    <div id="tab-apply" class="panel active">
+      <div class="rule-box"><strong>申請規則：</strong>每週至多 <strong>1 日</strong>（半日起）・部門每日居家上限為總人數的 <strong>1/2</strong>・週一及連假後首日不適用・當週有請假（公假除外）者不得申請</div>
+      <div class="apply-layout">
+        <div class="card">
+          <div class="form-row"><label class="field-label">申請人</label><select id="apply-member"></select></div>
+          <div class="form-row"><label class="field-label">日期</label><input type="date" id="apply-date" onchange="onDateChange()"></div>
+          <div class="form-row">
+            <label class="field-label">申請時段</label>
+            <div class="seg-control">
+              <div class="seg-btn sel" onclick="selSlot(this,'全天')">全天</div>
+              <div class="seg-btn" onclick="selSlot(this,'上半日')">上半日</div>
+              <div class="seg-btn" onclick="selSlot(this,'下半日')">下半日</div>
+            </div>
+          </div>
+          <div class="form-row"><label class="field-label">備註（選填）</label><input type="text" id="apply-note" placeholder="例：配合客戶會議時間"></div>
+          <button class="submit-btn" id="submit-btn" onclick="submitApply()">送出申請</button>
+        </div>
+        <div class="card" id="quota-card">
+          <div class="quota-idle" id="quota-idle"><div class="qi-icon">📋</div><div>選擇日期後<br>即可查看當日名額</div></div>
+          <div id="quota-detail" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div id="tab-calendar" class="panel">
+      <div class="cal-toolbar">
+        <div class="cal-nav">
+          <button class="cal-nav-btn" onclick="prevMonth()">‹</button>
+          <div class="cal-month-title" id="cal-title"></div>
+          <button class="cal-nav-btn" onclick="nextMonth()">›</button>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="dot" style="background:var(--amber)"></div>待審核</div>
+          <div class="legend-item"><div class="dot" style="background:var(--green)"></div>已核准</div>
+          <div class="legend-item"><div class="dot" style="background:var(--red)"></div>已拒絕</div>
+        </div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div id="day-detail"></div>
+    </div>
+
+    <!-- MEMBERS -->
+    <div id="tab-members" class="panel">
+      <div class="stats-grid" id="stats-grid"></div>
+      <div class="sec-title">成員列表</div>
+      <div class="member-grid" id="member-grid"></div>
+      <div class="sec-title">新增成員</div>
+      <div class="add-form">
+        <div class="fg"><label class="field-label" style="font-size:11px">姓名</label><input type="text" id="new-name" placeholder="王小明"></div>
+        <div class="fg"><label class="field-label" style="font-size:11px">職稱</label><input type="text" id="new-role" placeholder="行銷企劃師"></div>
+        <button class="add-btn" onclick="addMember()">+ 新增</button>
+      </div>
+    </div>
+
+    <!-- LOG -->
+    <div id="tab-log" class="panel">
+      <div class="log-toolbar">
+        <select id="lf-action" onchange="renderLog()">
+          <option value="">全部動作</option>
+          <option value="apply">新增申請</option>
+          <option value="approve">核准</option>
+          <option value="reject">拒絕</option>
+          <option value="cancel">撤銷</option>
+          <option value="member_add">新增成員</option>
+          <option value="member_del">移除成員</option>
+        </select>
+        <select id="lf-member" onchange="renderLog()"><option value="">全部成員</option></select>
+        <input type="text" id="lf-search" placeholder="搜尋關鍵字..." oninput="renderLog()">
+        <button class="log-btn log-export" onclick="exportLog()">↓ 匯出 CSV</button>
+        <button class="log-btn log-clear" onclick="clearLog()">清除記錄</button>
+      </div>
+      <div class="log-count" id="log-count"></div>
+      <div class="log-wrap">
+        <table class="log-table">
+          <thead><tr><th>時間</th><th>操作人</th><th>動作</th><th>對象</th><th>日期</th><th>時段</th><th>備註</th></tr></thead>
+          <tbody id="log-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Config ──────────────────────────────────────────────
+const STORAGE_KEY = 'hw_config';
+let supabase_client = null;
+let config = null;
+
+function loadConfig() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch { return null; }
+}
+function saveConfig() {
+  const url = document.getElementById('cfg-url').value.trim();
+  const key = document.getElementById('cfg-key').value.trim();
+  const dept = document.getElementById('cfg-dept').value.trim() || '行銷企劃部';
+  if (!url || !key) { showToast('請填寫完整設定', true); return; }
+  if (!url.startsWith('https://')) { showToast('URL 格式不正確', true); return; }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ url, key, dept }));
+  location.reload();
+}
+
+// ── State ────────────────────────────────────────────────
+let members = [], applications = [], logs = [];
+let curYear = new Date().getFullYear();
+let curMonth = new Date().getMonth() + 1;
+let selectedDate = null;
+let applySlot = '全天';
+const AVATARS = ['#B5D4F4','#9FE1CB','#F5C4B3','#F4C0D1','#FAC775','#C0DD97','#CECBF6'];
+const TCOLORS  = ['#0C447C','#085041','#712B13','#72243E','#633806','#27500A','#3C3489'];
+
+function getAv(id) { const i = (id - 1) % AVATARS.length; return { bg: AVATARS[i], c: TCOLORS[i] }; }
+function initials(n) { return n.slice(0, 2); }
+function fmtDate(y, m, d) { return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+function isMonday(s) { return new Date(s + 'T00:00:00').getDay() === 1; }
+function isWeekend(s) { const d = new Date(s + 'T00:00:00').getDay(); return d === 0 || d === 6; }
+function nowStr() {
+  const d = new Date(), p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function getMember(id) { return members.find(m => m.id === id); }
+
+// ── Supabase helpers ─────────────────────────────────────
+async function dbFetch(table, opts = {}) {
+  let q = supabase_client.from(table).select('*');
+  if (opts.order) q = q.order(opts.order, { ascending: opts.asc ?? true });
+  const { data, error } = await q;
+  if (error) throw error;
+  return data;
+}
+async function dbInsert(table, row) {
+  const { data, error } = await supabase_client.from(table).insert(row).select().single();
+  if (error) throw error;
+  return data;
+}
+async function dbUpdate(table, id, patch) {
+  const { error } = await supabase_client.from(table).update(patch).eq('id', id);
+  if (error) throw error;
+}
+async function dbDelete(table, id) {
+  const { error } = await supabase_client.from(table).delete().eq('id', id);
+  if (error) throw error;
+}
+
+async function addLog(actor, action, target = '', date = '', slot = '', note = '') {
+  const row = { ts: nowStr(), actor, action, target, date, slot, note };
+  const saved = await dbInsert('logs', row);
+  logs.unshift(saved);
+}
+
+// ── Init ─────────────────────────────────────────────────
+async function init() {
+  config = loadConfig();
+  if (!config) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('setup-screen').style.display = 'flex';
+    return;
+  }
+
+  document.getElementById('dept-badge').textContent = config.dept;
+
+  try {
+    supabase_client = supabase.createClient(config.url, config.key);
+    [members, applications, logs] = await Promise.all([
+      dbFetch('members', { order: 'created_at', asc: true }),
+      dbFetch('applications', { order: 'created_at', asc: true }),
+      dbFetch('logs', { order: 'created_at', asc: false }),
+    ]);
+    document.getElementById('db-dot').className = 'db-dot ok';
+    document.getElementById('db-label').textContent = '已連線';
+  } catch (e) {
+    document.getElementById('db-dot').className = 'db-dot err';
+    document.getElementById('db-label').textContent = '連線失敗';
+    showToast('資料庫連線失敗，請檢查設定', true);
+  }
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+  renderApplySelect();
+}
+
+// ── Tabs ─────────────────────────────────────────────────
+function switchTab(t) {
+  ['apply','calendar','members','log'].forEach((n, i) => {
+    document.querySelectorAll('.tab')[i].classList.toggle('active', n === t);
+    document.getElementById('tab-' + n).classList.toggle('active', n === t);
+  });
+  if (t === 'calendar') renderCalendar();
+  if (t === 'members') renderMembers();
+  if (t === 'log') { updateLogFilters(); renderLog(); }
+}
+
+// ── Apply ────────────────────────────────────────────────
+function selSlot(el, slot) {
+  applySlot = slot;
+  document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function onDateChange() { renderQuota(document.getElementById('apply-date').value); }
+
+function renderApplySelect() {
+  document.getElementById('apply-member').innerHTML =
+    members.map(m => `<option value="${m.id}">${m.name}（${m.role || ''}）</option>`).join('');
+}
+
+function renderQuota(date) {
+  const idle = document.getElementById('quota-idle');
+  const det = document.getElementById('quota-detail');
+  if (!date) { idle.style.display = ''; det.style.display = 'none'; return; }
+  idle.style.display = 'none'; det.style.display = '';
+
+  const d = new Date(date + 'T00:00:00');
+  const wdNames = ['日','一','二','三','四','五','六'];
+  const label = `${d.getMonth()+1} 月 ${d.getDate()} 日（週${wdNames[d.getDay()]}）`;
+  const half = Math.floor(members.length / 2);
+  const approvedList = applications.filter(a => a.date === date && a.status === 'approved');
+  const pendingList  = applications.filter(a => a.date === date && a.status === 'pending');
+  const used = approvedList.length;
+  const rem  = Math.max(0, half - used);
+  const pct  = half > 0 ? Math.min(100, Math.round(used / half * 100)) : 0;
+  const mColor = pct >= 100 ? 'var(--red)' : pct >= 60 ? 'var(--amber)' : 'var(--green)';
+
+  let h = `<div class="quota-date-label">${label}</div>`;
+  if (isWeekend(date)) { h += `<div class="quota-note quota-na">週末無法申請居家辦公</div>`; det.innerHTML = h; resetBtn(); return; }
+  if (isMonday(date))  { h += `<div class="quota-note quota-na">週一不適用居家辦公</div>`; det.innerHTML = h; resetBtn(); return; }
+
+  h += `<div class="quota-big"><span class="quota-num" style="color:${rem===0?'var(--red)':rem<=1?'var(--amber)':'var(--green)'}">${rem}</span><span class="quota-unit">/ ${half} 個名額剩餘</span></div>
+        <div class="quota-sub">部門 ${members.length} 人・當日上限 ${half} 人</div>
+        <div class="meter-wrap"><div class="meter-bar"><div class="meter-fill" style="width:${pct}%;background:${mColor}"></div></div><div class="meter-label" style="color:${mColor}">${used}/${half}</div></div>`;
+  h += rem === 0 ? `<div class="quota-note quota-full">當日名額已滿</div>` :
+       rem === 1 ? `<div class="quota-note quota-warn">僅剩最後 1 個名額</div>` :
+                  `<div class="quota-note quota-ok">名額充足，可正常申請</div>`;
+
+  if (approvedList.length || pendingList.length) {
+    h += `<hr class="quota-divider">`;
+    if (approvedList.length) {
+      h += `<div class="mini-label">已核准（${approvedList.length} 人）</div><div class="pill-row">`;
+      approvedList.forEach(a => { const m = getMember(a.member_id); if (!m) return; const av = getAv(m.id); h += `<div class="pill pill-approved"><div class="pill-av" style="background:${av.bg};color:${av.c}">${initials(m.name)}</div>${m.name}</div>`; });
+      h += `</div>`;
+    }
+    if (pendingList.length) {
+      h += `<div class="mini-label">待審核（${pendingList.length} 人）</div><div class="pill-row">`;
+      pendingList.forEach(a => { const m = getMember(a.member_id); if (!m) return; const av = getAv(m.id); h += `<div class="pill pill-pending"><div class="pill-av" style="background:${av.bg};color:${av.c}">${initials(m.name)}</div>${m.name}</div>`; });
+      h += `</div>`;
+    }
+  }
+  det.innerHTML = h;
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = rem === 0; btn.textContent = rem === 0 ? '當日名額已滿' : '送出申請';
+}
+
+function resetBtn() { const b = document.getElementById('submit-btn'); b.disabled = false; b.textContent = '送出申請'; }
+
+async function submitApply() {
+  const memberId = parseInt(document.getElementById('apply-member').value);
+  const date = document.getElementById('apply-date').value;
+  const note = document.getElementById('apply-note').value.trim();
+  const m = getMember(memberId);
+  if (!date) { showToast('請選擇日期', true); return; }
+  const d = new Date(date + 'T00:00:00'), day = d.getDay();
+  if (day === 0 || day === 6) { showToast('週末無法申請', true); return; }
+  if (day === 1) { showToast('週一不適用居家辦公', true); return; }
+  const half = Math.floor(members.length / 2);
+  if (applications.filter(a => a.date === date && a.status === 'approved').length >= half) { showToast('當日名額已滿', true); return; }
+  const ws = new Date(d); ws.setDate(d.getDate() - d.getDay() + 1);
+  const we = new Date(ws); we.setDate(ws.getDate() + 4);
+  const hasWeek = applications.some(a => { if (a.member_id !== memberId || a.status === 'rejected') return false; const ad = new Date(a.date + 'T00:00:00'); return ad >= ws && ad <= we; });
+  if (hasWeek) { showToast('該成員本週已有申請紀錄', true); return; }
+  if (applications.find(a => a.member_id === memberId && a.date === date && a.status !== 'rejected')) { showToast('該成員當日已申請', true); return; }
+
+  document.getElementById('submit-btn').disabled = true;
+  try {
+    const saved = await dbInsert('applications', { member_id: memberId, date, slot: applySlot, status: 'pending', note });
+    applications.push(saved);
+    await addLog(m.name, 'apply', m.name, date, applySlot, note);
+    showToast('申請已送出，等待主管審核 ✓');
+    document.getElementById('apply-date').value = '';
+    document.getElementById('apply-note').value = '';
+    renderQuota('');
+    resetBtn();
+  } catch (e) { showToast('送出失敗，請稍後再試', true); resetBtn(); }
+}
+
+// ── Calendar ─────────────────────────────────────────────
+function prevMonth() { curMonth--; if (curMonth < 1) { curMonth = 12; curYear--; } renderCalendar(); }
+function nextMonth() { curMonth++; if (curMonth > 12) { curMonth = 1; curYear++; } renderCalendar(); }
+
+function renderCalendar() {
+  const mNames = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  document.getElementById('cal-title').textContent = `${curYear} 年 ${mNames[curMonth-1]}`;
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = ['日','一','二','三','四','五','六'].map(d => `<div class="cal-head">${d}</div>`).join('');
+  const first = new Date(curYear, curMonth-1, 1).getDay();
+  const total = new Date(curYear, curMonth, 0).getDate();
+  const prevTotal = new Date(curYear, curMonth-1, 0).getDate();
+  const today = new Date(), todayStr = fmtDate(today.getFullYear(), today.getMonth()+1, today.getDate());
+  for (let i = 0; i < first; i++) grid.innerHTML += `<div class="cal-cell other"><div class="day-n">${prevTotal-first+1+i}</div></div>`;
+  for (let d = 1; d <= total; d++) {
+    const ds = fmtDate(curYear, curMonth, d);
+    const isToday = ds === todayStr, isMon = isMonday(ds), isWknd = isWeekend(ds), isSel = ds === selectedDate;
+    let cls = 'cal-cell'; if (isToday) cls += ' today'; if (isWknd) cls += ' wknd'; if (isSel) cls += ' selected'; if (isMon && !isWknd) cls += ' mon-cell';
+    let inner = `<div class="day-n">${d}</div>`;
+    if (isMon && !isWknd) inner += `<div class="no-wfh-tag">週一不適用</div>`;
+    const apps = applications.filter(a => a.date === ds);
+    apps.slice(0, 2).forEach(a => { const m = getMember(a.member_id); if (!m) return; inner += `<div class="chip chip-${a.status === 'approved' ? 'approved' : a.status === 'rejected' ? 'rejected' : 'pending'}">${m.name}</div>`; });
+    if (apps.length > 2) inner += `<div class="more-hint">+${apps.length-2} 人</div>`;
+    grid.innerHTML += `<div class="${cls}" ${!isWknd ? `onclick="selectDay('${ds}')"` : ''}>${inner}</div>`;
+  }
+  const rem = (7 - (first + total) % 7) % 7;
+  for (let d = 1; d <= rem; d++) grid.innerHTML += `<div class="cal-cell other"><div class="day-n">${d}</div></div>`;
+  if (selectedDate) renderDayDetail(selectedDate);
+}
+
+function selectDay(ds) { selectedDate = ds; renderCalendar(); }
+
+function renderDayDetail(ds) {
+  const cont = document.getElementById('day-detail');
+  const d = new Date(ds + 'T00:00:00');
+  const lbl = `${d.getMonth()+1} 月 ${d.getDate()} 日`;
+  const apps = applications.filter(a => a.date === ds);
+  const appCount = apps.filter(a => a.status === 'approved').length;
+  const half = Math.floor(members.length / 2);
+  let rows = '';
+  if (!apps.length) { rows = `<div class="empty-hint">當日無居家辦公申請</div>`; }
+  else apps.forEach(a => {
+    const m = getMember(a.member_id); if (!m) return;
+    const av = getAv(m.id);
+    let btns = '';
+    if (a.status === 'pending') btns = `<div class="act-btns"><button class="btn-approve" onclick="approveApp(${a.id})">✓ 核准</button><button class="btn-reject" onclick="rejectApp(${a.id})">✕ 拒絕</button></div>`;
+    else if (a.status === 'approved') btns = `<span class="status-pill chip-approved">已核准</span>`;
+    else btns = `<span class="status-pill chip-rejected">已拒絕</span>`;
+    rows += `<div class="app-row"><div class="app-info"><div class="av" style="background:${av.bg};color:${av.c}">${initials(m.name)}</div><div><div class="app-name">${m.name}</div><div class="app-meta">${m.role}・${a.slot}${a.note?'・'+a.note:''}</div></div></div>${btns}</div>`;
+  });
+  cont.innerHTML = `<div class="card day-detail-card"><div class="detail-header"><div class="detail-title">${lbl} 申請列表</div><div class="detail-quota">${appCount} / ${half} 人已核准</div></div>${rows}</div>`;
+}
+
+async function approveApp(id) {
+  const a = applications.find(x => x.id === id); if (!a) return;
+  const half = Math.floor(members.length / 2);
+  if (applications.filter(x => x.date === a.date && x.status === 'approved').length >= half) { showToast('當日核准人數已達上限', true); return; }
+  const m = getMember(a.member_id);
+  try {
+    await dbUpdate('applications', id, { status: 'approved' });
+    a.status = 'approved';
+    await addLog('主管', 'approve', m ? m.name : '', a.date, a.slot, '');
+    renderCalendar(); showToast('已核准申請 ✓');
+  } catch { showToast('操作失敗', true); }
+}
+async function rejectApp(id) {
+  const a = applications.find(x => x.id === id); if (!a) return;
+  const m = getMember(a.member_id);
+  try {
+    await dbUpdate('applications', id, { status: 'rejected' });
+    a.status = 'rejected';
+    await addLog('主管', 'reject', m ? m.name : '', a.date, a.slot, '');
+    renderCalendar(); showToast('已拒絕申請');
+  } catch { showToast('操作失敗', true); }
+}
+
+// ── Members ──────────────────────────────────────────────
+function renderMembers() {
+  const mg = document.getElementById('member-grid');
+  mg.innerHTML = members.map(m => { const av = getAv(m.id); return `<div class="member-card"><div class="av" style="background:${av.bg};color:${av.c};width:38px;height:38px;font-size:13px">${initials(m.name)}</div><div><div class="m-name">${m.name}</div><div class="m-role">${m.role||''}</div></div><button class="del-btn" onclick="deleteMember(${m.id})">×</button></div>`; }).join('');
+  const pending = applications.filter(a => a.status === 'pending').length;
+  const thisMonthApproved = applications.filter(a => a.date.startsWith(`${curYear}-${String(curMonth).padStart(2,'0')}`) && a.status === 'approved').length;
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${members.length}</div><div class="stat-lbl">部門成員</div></div>
+    <div class="stat-card"><div class="stat-num">${pending}</div><div class="stat-lbl">待審核申請</div></div>
+    <div class="stat-card"><div class="stat-num">${thisMonthApproved}</div><div class="stat-lbl">本月已核准天次</div></div>`;
+}
+async function addMember() {
+  const name = document.getElementById('new-name').value.trim();
+  const role = document.getElementById('new-role').value.trim();
+  if (!name) { showToast('請輸入姓名', true); return; }
+  try {
+    const saved = await dbInsert('members', { name, role: role || '行銷企劃' });
+    members.push(saved);
+    await addLog('主管', 'member_add', name, '', '', '新增成員');
+    document.getElementById('new-name').value = ''; document.getElementById('new-role').value = '';
+    renderMembers(); renderApplySelect(); showToast(`已新增 ${name} ✓`);
+  } catch { showToast('新增失敗', true); }
+}
+async function deleteMember(id) {
+  if (members.length <= 1) { showToast('至少保留一位成員', true); return; }
+  const m = getMember(id); if (!m) return;
+  if (!confirm(`確定要移除「${m.name}」？相關申請紀錄也會一併刪除。`)) return;
+  try {
+    await dbDelete('members', id);
+    members = members.filter(x => x.id !== id);
+    applications = applications.filter(x => x.member_id !== id);
+    await addLog('主管', 'member_del', m.name, '', '', '移除成員');
+    renderMembers(); renderCalendar(); renderApplySelect(); showToast(`已移除 ${m.name}`);
+  } catch { showToast('移除失敗', true); }
+}
+
+// ── Log ──────────────────────────────────────────────────
+function updateLogFilters() {
+  const sel = document.getElementById('lf-member');
+  const cur = sel.value;
+  const names = [...new Set(logs.map(l => l.target).filter(Boolean))].sort();
+  sel.innerHTML = `<option value="">全部成員</option>` + names.map(n => `<option value="${n}" ${n===cur?'selected':''}>${n}</option>`).join('');
+}
+function renderLog() {
+  const fa = document.getElementById('lf-action').value;
+  const fm = document.getElementById('lf-member').value;
+  const fs = document.getElementById('lf-search').value.trim().toLowerCase();
+  const aLabel = { apply:'新增申請', approve:'核准', reject:'拒絕', cancel:'撤銷', member_add:'新增成員', member_del:'移除成員' };
+  const aClass = { apply:'lb-apply', approve:'lb-approve', reject:'lb-reject', cancel:'lb-cancel', member_add:'lb-madd', member_del:'lb-mdel' };
+  const filtered = logs.filter(l => {
+    if (fa && l.action !== fa) return false;
+    if (fm && l.target !== fm) return false;
+    if (fs && !(l.actor+l.target+l.date+l.note+l.slot).toLowerCase().includes(fs)) return false;
+    return true;
+  });
+  document.getElementById('log-count').textContent = `共 ${filtered.length} 筆記錄`;
+  const tbody = document.getElementById('log-body');
+  if (!filtered.length) { tbody.innerHTML = `<tr><td colspan="7"><div class="empty-hint">沒有符合條件的記錄</div></td></tr>`; return; }
+  tbody.innerHTML = filtered.map((l, i) => `<tr class="${i===0?'log-new':''}">
+    <td style="color:var(--text3);font-size:12px;white-space:nowrap">${l.ts}</td>
+    <td style="white-space:nowrap">${l.actor}</td>
+    <td><span class="log-badge ${aClass[l.action]||'lb-cancel'}">${aLabel[l.action]||l.action}</span></td>
+    <td style="white-space:nowrap">${l.target||'—'}</td>
+    <td style="color:var(--text3);white-space:nowrap">${l.date||'—'}</td>
+    <td style="color:var(--text3);white-space:nowrap">${l.slot||'—'}</td>
+    <td style="color:var(--text3)">${l.note||'—'}</td>
+  </tr>`).join('');
+}
+function exportLog() {
+  const rows = [['時間','操作人','動作','對象','日期','時段','備註'], ...logs.map(l => [l.ts,l.actor,l.action,l.target,l.date,l.slot,l.note])];
+  const csv = rows.map(r => r.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='混合辦公操作記錄.csv'; a.click(); URL.revokeObjectURL(url);
+  showToast('已匯出 CSV ✓');
+}
+async function clearLog() {
+  if (!confirm('確定要清除所有操作記錄？此動作無法還原。')) return;
+  try {
+    await supabase_client.from('logs').delete().neq('id', 0);
+    logs = []; renderLog(); showToast('操作記錄已清除');
+  } catch { showToast('清除失敗', true); }
+}
+
+// ── Toast ─────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, err = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show' + (err ? ' err' : '');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.className = 'toast', 2800);
+}
+
+// ── Start ─────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
