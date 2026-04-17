@@ -198,6 +198,22 @@
   .log-new { animation: logflash 1.6s ease; }
   @keyframes logflash { 0%{background:var(--blue-bg)} 100%{background:transparent} }
 
+  /* ── Edit modal ── */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+  .modal { background: var(--bg); border-radius: var(--radius-lg); padding: 1.5rem; width: 100%; max-width: 420px; border: 0.5px solid var(--border2); box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
+  .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 1.25rem; }
+  .modal-footer { display: flex; gap: 8px; margin-top: 1.25rem; justify-content: flex-end; }
+  .btn-cancel-modal { padding: 8px 16px; border: 0.5px solid var(--border2); background: transparent; border-radius: var(--radius); font-size: 13px; cursor: pointer; color: var(--text2); }
+  .btn-cancel-modal:hover { background: var(--bg2); }
+  .btn-save-modal { padding: 8px 16px; background: var(--blue); color: white; border: none; border-radius: var(--radius); font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-save-modal:hover { background: var(--blue-text); }
+  .btn-delete-modal { padding: 8px 16px; border: 0.5px solid var(--red); background: transparent; color: var(--red-text); border-radius: var(--radius); font-size: 13px; cursor: pointer; margin-right: auto; }
+  .btn-delete-modal:hover { background: var(--red-bg); }
+  .btn-cancel-app { border: 0.5px solid var(--border2); background: transparent; color: var(--text2); border-radius: 6px; padding: 5px 10px; font-size: 12px; cursor: pointer; }
+  .btn-cancel-app:hover { background: var(--red-bg); color: var(--red-text); border-color: var(--red); }
+  .btn-edit-app { border: 0.5px solid var(--border2); background: transparent; color: var(--text2); border-radius: 6px; padding: 5px 10px; font-size: 12px; cursor: pointer; }
+  .btn-edit-app:hover { background: var(--blue-bg); color: var(--blue-text); border-color: var(--blue); }
+
   /* ── DB status ── */
   .db-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text3); }
   .db-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); }
@@ -407,6 +423,7 @@ create policy "allow all" on logs for all using (true) with check (true);</div>
         <select id="lf-action" onchange="renderLog()">
           <option value="">全部動作</option>
           <option value="apply">新增申請</option>
+          <option value="edit">修改申請</option>
           <option value="approve">核准</option>
           <option value="reject">拒絕</option>
           <option value="cancel">撤銷</option>
@@ -425,6 +442,29 @@ create policy "allow all" on logs for all using (true) with check (true);</div>
           <tbody id="log-body"></tbody>
         </table>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit/Cancel Modal -->
+<div class="modal-backdrop" id="edit-modal" style="display:none" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">修改申請</div>
+    <input type="hidden" id="edit-app-id">
+    <div class="form-row"><label class="field-label">日期</label><input type="date" id="edit-date"></div>
+    <div class="form-row">
+      <label class="field-label">申請時段</label>
+      <div class="seg-control" id="edit-seg">
+        <div class="seg-btn" onclick="selEditSlot(this,'全天')">全天</div>
+        <div class="seg-btn" onclick="selEditSlot(this,'上半日')">上半日</div>
+        <div class="seg-btn" onclick="selEditSlot(this,'下半日')">下半日</div>
+      </div>
+    </div>
+    <div class="form-row"><label class="field-label">備註（選填）</label><input type="text" id="edit-note" placeholder="例：配合客戶會議時間"></div>
+    <div class="modal-footer">
+      <button class="btn-delete-modal" onclick="cancelApp()">🗑 撤銷申請</button>
+      <button class="btn-cancel-modal" onclick="closeModal()">取消</button>
+      <button class="btn-save-modal" onclick="saveEdit()">儲存修改</button>
     </div>
   </div>
 </div>
@@ -676,8 +716,8 @@ function renderDayDetail(ds) {
     const m = getMember(a.member_id); if (!m) return;
     const av = getAv(m.id);
     let btns = '';
-    if (a.status === 'pending') btns = `<div class="act-btns"><button class="btn-approve" onclick="approveApp(${a.id})">✓ 核准</button><button class="btn-reject" onclick="rejectApp(${a.id})">✕ 拒絕</button></div>`;
-    else if (a.status === 'approved') btns = `<span class="status-pill chip-approved">已核准</span>`;
+    if (a.status === 'pending') btns = `<div class="act-btns"><button class="btn-approve" onclick="approveApp(${a.id})">✓ 核准</button><button class="btn-reject" onclick="rejectApp(${a.id})">✕ 拒絕</button><button class="btn-edit-app" onclick="openEdit(${a.id})" title="修改申請">✎</button><button class="btn-cancel-app" onclick="quickCancelApp(${a.id})" title="撤銷申請">撤銷</button></div>`;
+    else if (a.status === 'approved') btns = `<div class="act-btns"><span class="status-pill chip-approved">已核准</span><button class="btn-cancel-app" onclick="quickCancelApp(${a.id})" title="撤銷此核准">撤銷</button></div>`;
     else btns = `<span class="status-pill chip-rejected">已拒絕</span>`;
     rows += `<div class="app-row"><div class="app-info"><div class="av" style="background:${av.bg};color:${av.c}">${initials(m.name)}</div><div><div class="app-name">${m.name}</div><div class="app-meta">${m.role}・${a.slot}${a.note?'・'+a.note:''}</div></div></div>${btns}</div>`;
   });
@@ -707,7 +747,91 @@ async function rejectApp(id) {
   } catch { showToast('操作失敗', true); }
 }
 
-// ── Members ──────────────────────────────────────────────
+// ── Cancel / Edit application ────────────────────────────
+let editSlot = '全天';
+
+async function quickCancelApp(id) {
+  const a = applications.find(x => x.id === id); if (!a) return;
+  const m = getMember(a.member_id);
+  const label = a.status === 'approved' ? '撤銷此已核准申請' : '撤銷此申請';
+  if (!confirm(`確定要${label}？`)) return;
+  try {
+    await dbDelete('applications', id);
+    applications = applications.filter(x => x.id !== id);
+    await addLog(m ? m.name : '主管', 'cancel', m ? m.name : '', a.date, a.slot, '撤銷申請');
+    renderCalendar();
+    renderQuota(document.getElementById('apply-date').value);
+    showToast('已撤銷申請');
+  } catch { showToast('操作失敗', true); }
+}
+
+function openEdit(id) {
+  const a = applications.find(x => x.id === id); if (!a) return;
+  document.getElementById('edit-app-id').value = id;
+  document.getElementById('edit-date').value = a.date;
+  document.getElementById('edit-note').value = a.note || '';
+  editSlot = a.slot;
+  document.querySelectorAll('#edit-seg .seg-btn').forEach(b => b.classList.toggle('sel', b.textContent === a.slot));
+  document.getElementById('edit-modal').style.display = 'flex';
+}
+
+function selEditSlot(el, slot) {
+  editSlot = slot;
+  document.querySelectorAll('#edit-seg .seg-btn').forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('edit-modal'))
+    document.getElementById('edit-modal').style.display = 'none';
+}
+
+async function saveEdit() {
+  const id = parseInt(document.getElementById('edit-app-id').value);
+  const date = document.getElementById('edit-date').value;
+  const note = document.getElementById('edit-note').value.trim();
+  const a = applications.find(x => x.id === id); if (!a) return;
+  const m = getMember(a.member_id);
+  if (!date) { showToast('請選擇日期', true); return; }
+  const d = new Date(date + 'T00:00:00'), day = d.getDay();
+  if (day === 0 || day === 6) { showToast('週末無法申請', true); return; }
+  if (day === 1) { showToast('週一不適用居家辦公', true); return; }
+  // Check week quota (exclude self)
+  const ws = new Date(d); ws.setDate(d.getDate() - d.getDay() + 1);
+  const we = new Date(ws); we.setDate(ws.getDate() + 4);
+  const hasWeek = applications.some(x => {
+    if (x.id === id || x.member_id !== a.member_id || x.status === 'rejected') return false;
+    const xd = new Date(x.date + 'T00:00:00'); return xd >= ws && xd <= we;
+  });
+  if (hasWeek) { showToast('該成員本週已有其他申請紀錄', true); return; }
+  try {
+    await dbUpdate('applications', id, { date, slot: editSlot, note });
+    a.date = date; a.slot = editSlot; a.note = note;
+    await addLog(m ? m.name : '主管', 'edit', m ? m.name : '', date, editSlot, '修改申請');
+    document.getElementById('edit-modal').style.display = 'none';
+    renderCalendar();
+    renderQuota(document.getElementById('apply-date').value);
+    showToast('申請已修改 ✓');
+  } catch { showToast('修改失敗', true); }
+}
+
+async function cancelApp() {
+  const id = parseInt(document.getElementById('edit-app-id').value);
+  const a = applications.find(x => x.id === id); if (!a) return;
+  const m = getMember(a.member_id);
+  if (!confirm('確定要撤銷這筆申請？')) return;
+  try {
+    await dbDelete('applications', id);
+    applications = applications.filter(x => x.id !== id);
+    await addLog(m ? m.name : '主管', 'cancel', m ? m.name : '', a.date, a.slot, '撤銷申請');
+    document.getElementById('edit-modal').style.display = 'none';
+    renderCalendar();
+    renderQuota(document.getElementById('apply-date').value);
+    showToast('已撤銷申請');
+  } catch { showToast('操作失敗', true); }
+}
+
+
 function renderMembers() {
   const mg = document.getElementById('member-grid');
   mg.innerHTML = members.map(m => { const av = getAv(m.id); return `<div class="member-card"><div class="av" style="background:${av.bg};color:${av.c};width:38px;height:38px;font-size:13px">${initials(m.name)}</div><div><div class="m-name">${m.name}</div><div class="m-role">${m.role||''}</div></div><button class="del-btn" onclick="deleteMember(${m.id})">×</button></div>`; }).join('');
@@ -754,8 +878,8 @@ function renderLog() {
   const fa = document.getElementById('lf-action').value;
   const fm = document.getElementById('lf-member').value;
   const fs = document.getElementById('lf-search').value.trim().toLowerCase();
-  const aLabel = { apply:'新增申請', approve:'核准', reject:'拒絕', cancel:'撤銷', member_add:'新增成員', member_del:'移除成員' };
-  const aClass = { apply:'lb-apply', approve:'lb-approve', reject:'lb-reject', cancel:'lb-cancel', member_add:'lb-madd', member_del:'lb-mdel' };
+  const aLabel = { apply:'新增申請', approve:'核准', reject:'拒絕', cancel:'撤銷', edit:'修改申請', member_add:'新增成員', member_del:'移除成員' };
+  const aClass = { apply:'lb-apply', approve:'lb-approve', reject:'lb-reject', cancel:'lb-cancel', edit:'lb-apply', member_add:'lb-madd', member_del:'lb-mdel' };
   const filtered = logs.filter(l => {
     if (fa && l.action !== fa) return false;
     if (fm && l.target !== fm) return false;
