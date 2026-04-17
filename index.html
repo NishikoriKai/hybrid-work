@@ -473,22 +473,11 @@ create policy "allow all" on logs for all using (true) with check (true);</div>
 
 <script>
 // ── Config ──────────────────────────────────────────────
-const STORAGE_KEY = 'hw_config';
+const SUPABASE_URL = 'https://fsuxizmrlwphpmptnqtu.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzdXhpem1ybHdwaHBtcHRucXR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0MDM2MTcsImV4cCI6MjA5MTk3OTYxN30.j7qfq1HkGD_bVgixa-yrEnqQlPIJDz9ZS1cI6TS2ZkI';
+const DEPT_NAME = '行銷企劃部';
 let supabase_client = null;
-let config = null;
 
-function loadConfig() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch { return null; }
-}
-function saveConfig() {
-  const url = document.getElementById('cfg-url').value.trim();
-  const key = document.getElementById('cfg-key').value.trim();
-  const dept = document.getElementById('cfg-dept').value.trim() || '行銷企劃部';
-  if (!url || !key) { showToast('請填寫完整設定', true); return; }
-  if (!url.startsWith('https://')) { showToast('URL 格式不正確', true); return; }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ url, key, dept }));
-  location.reload();
-}
 
 // ── State ────────────────────────────────────────────────
 let members = [], applications = [], logs = [];
@@ -540,17 +529,9 @@ async function addLog(actor, action, target = '', date = '', slot = '', note = '
 
 // ── Init ─────────────────────────────────────────────────
 async function init() {
-  config = loadConfig();
-  if (!config) {
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('setup-screen').style.display = 'flex';
-    return;
-  }
-
-  document.getElementById('dept-badge').textContent = config.dept;
-
+  document.getElementById('dept-badge').textContent = DEPT_NAME;
   try {
-    supabase_client = supabase.createClient(config.url, config.key);
+    supabase_client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     [members, applications, logs] = await Promise.all([
       dbFetch('members', { order: 'created_at', asc: true }),
       dbFetch('applications', { order: 'created_at', asc: true }),
@@ -561,9 +542,8 @@ async function init() {
   } catch (e) {
     document.getElementById('db-dot').className = 'db-dot err';
     document.getElementById('db-label').textContent = '連線失敗';
-    showToast('資料庫連線失敗，請檢查設定', true);
+    showToast('資料庫連線失敗，請稍後重試', true);
   }
-
   document.getElementById('loading').style.display = 'none';
   document.getElementById('main-app').style.display = 'block';
   renderApplySelect();
