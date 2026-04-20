@@ -463,56 +463,130 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 // ── 中華民國國定假日（2025-2026）──────────────────────────
 // ── 中華民國行政機關辦公日曆 ──────────────────────────────
-// 放假日（value 為假日名稱）；補班日單獨列出（isWorkday=true）
-// 資料來源：行政院人事行政總處公告
+// 2025-2026：依行政院人事行政總處正式公告
+// 2027：依預排規則推算（官方尚未公告，俟公告後更新）
+// ★ 2025下半年起取消補班日制度，2026起無補班日
 
 const TW_HOLIDAYS = {
   // ── 2025 ──
   '2025-01-01':'元旦',
-  // 春節：1/27(一)~2/2(日)，其中1/27補班→實際放假1/28~2/2
-  // 人事行政總處公告：1/27補班，放假1/28(二)~2/4(二) 共8天
+  // 春節：1/28(二)~2/4(二)，1/27(一)補班
   '2025-01-28':'春節','2025-01-29':'春節','2025-01-30':'春節',
   '2025-01-31':'春節','2025-02-01':'春節','2025-02-02':'春節',
   '2025-02-03':'春節補假','2025-02-04':'春節補假',
   '2025-02-28':'和平紀念日',
+  // 兒童節+清明：4/3(四)~4/5(六)
   '2025-04-03':'兒童節補假','2025-04-04':'兒童節','2025-04-05':'清明節',
   '2025-05-01':'勞動節',
+  // 端午：5/30(五)~6/1(日)
   '2025-05-30':'端午節','2025-05-31':'端午節補假',
-  '2025-10-06':'國慶日補假','2025-10-09':'重陽節','2025-10-10':'國慶日',
-  // ── 2026 ──
+  // 教師節：9/28(日)→9/29(一)補假
+  '2025-09-28':'教師節','2025-09-29':'教師節補假',
+  // 光復節：10/25(六)→10/24(五)補假
+  '2025-10-24':'光復節補假','2025-10-25':'光復節',
+  '2025-10-10':'國慶日',
+  // 行憲紀念日：12/25(四)
+  '2025-12-25':'行憲紀念日',
+
+  // ── 2026（人事行政總處正式公告）──
   '2026-01-01':'元旦',
-  // 春節：2026/1/28(三)除夕~2/3(二) 共7天
-  '2026-01-28':'除夕','2026-01-29':'春節','2026-01-30':'春節',
-  '2026-01-31':'春節','2026-02-01':'春節','2026-02-02':'春節',
-  '2026-02-03':'春節','2026-02-04':'春節補假',
-  '2026-02-28':'和平紀念日',
-  '2026-04-03':'兒童節','2026-04-04':'清明節','2026-04-05':'清明節補假',
+  // 春節：2/14(六)~2/22(日) 共9天（含除夕2/15）
+  '2026-02-14':'除夕（補假）','2026-02-15':'除夕',
+  '2026-02-16':'春節','2026-02-17':'春節','2026-02-18':'春節',
+  '2026-02-19':'春節','2026-02-20':'春節補假',
+  '2026-02-21':'春節（例假）','2026-02-22':'春節（例假）',
+  // 228：2/28(六)→2/27(五)補假
+  '2026-02-27':'和平紀念日補假','2026-02-28':'和平紀念日',
+  // 兒童節+清明：4/3(五)~4/6(一) 共4天
+  '2026-04-03':'兒童節','2026-04-04':'清明節',
+  '2026-04-05':'清明節補假','2026-04-06':'清明節補假',
+  // 勞動節：5/1(五)~5/3(日) 共3天
   '2026-05-01':'勞動節',
+  // 端午節：6/19(五)~6/21(日) 共3天
   '2026-06-19':'端午節','2026-06-20':'端午節補假',
-  '2026-09-26':'中秋節',
+  // 中秋節+教師節：9/25(五)~9/28(一) 共4天
+  '2026-09-25':'中秋節','2026-09-26':'中秋節補假',
+  '2026-09-27':'中秋節補假（例假）',
+  '2026-09-28':'教師節',
+  // 國慶日：10/9(五)~10/11(日) 共3天（10/10週六→10/9補假）
   '2026-10-09':'國慶日補假','2026-10-10':'國慶日',
-  // ── 2027 ──
+  // 光復節：10/24(六)~10/26(一) 共3天（10/25週六→10/26補假）
+  '2026-10-24':'光復節（例假）','2026-10-25':'光復節','2026-10-26':'光復節補假',
+  // 行憲紀念日：12/25(五)~12/27(日) 共3天
+  '2026-12-25':'行憲紀念日',
+
+  // ── 2027（預排，官方尚未公告）──
   '2027-01-01':'元旦',
-  // 春節：2027/2/15(一)~2/21(日) 共7天
-  '2027-02-15':'春節','2027-02-16':'春節','2027-02-17':'春節',
-  '2027-02-18':'春節','2027-02-19':'春節','2027-02-20':'春節',
-  '2027-02-21':'春節補假',
-  '2027-02-28':'和平紀念日',
-  '2027-04-02':'兒童節補假','2027-04-03':'兒童節','2027-04-05':'清明節',
-  '2027-05-01':'勞動節',
-  '2027-05-19':'端午節',
-  '2027-10-01':'中秋節','2027-10-10':'國慶日',
+  // 春節：2/4(四)~2/10(三) 預估7天
+  '2027-02-04':'除夕','2027-02-05':'春節','2027-02-06':'春節',
+  '2027-02-07':'春節','2027-02-08':'春節','2027-02-09':'春節',
+  '2027-02-10':'春節',
+  // 228：2/28(日)→3/1(一)補假，共3天
+  '2027-02-27':'和平紀念日補假','2027-02-28':'和平紀念日','2027-03-01':'和平紀念日補假',
+  // 兒童節+清明：4/4(日)補假→4/3~4/6，共4天
+  '2027-04-03':'兒童節補假','2027-04-04':'兒童節',
+  '2027-04-05':'清明節','2027-04-06':'清明節補假',
+  // 勞動節：4/30(五)~5/2(日) 共3天
+  '2027-04-30':'勞動節補假','2027-05-01':'勞動節',
+  // 端午節：6/9(三) 單日
+  '2027-06-09':'端午節',
+  // 教師節：9/28(二) 單日
+  '2027-09-28':'教師節',
+  // 中秋節：9/15(三) 單日
+  '2027-09-15':'中秋節',
+  // 國慶日：10/9(六)補假~10/11(一)，共3天
+  '2027-10-08':'國慶日補假','2027-10-10':'國慶日','2027-10-11':'國慶日補假',
+  // 光復節：10/23(六)~10/25(一)，共3天
+  '2027-10-23':'光復節（例假）','2027-10-25':'光復節','2027-10-26':'光復節補假',
+  // 行憲紀念日：12/24(五)~12/26(日)，共3天
+  '2027-12-24':'行憲紀念日補假','2027-12-25':'行憲紀念日',
 };
 
-// 補班日：雖為週六但須上班（標示用，不影響居家辦公申請判斷）
-const TW_MAKEUP = {
-  '2025-01-18':'補班','2025-02-08':'補班',
-  '2026-01-17':'補班','2026-01-24':'補班',
-  '2027-02-13':'補班',
-};
+// 2025/1/27 補班日（2026起無補班日制度）
+const TW_MAKEUP = { '2025-01-18':'補班','2025-02-08':'補班' };
+
+// 連假後第一個工作日（不得申請居家辦公）
+// 邏輯：某工作日的前一天是假日或週末，且再往前找到一個工作日的間距>=2天
+// 直接列舉更精確
+const TW_POST_HOLIDAY_FIRST_DAY = new Set([
+  // 2025
+  '2025-01-06', // 元旦連假後
+  '2025-02-05', // 春節連假後
+  '2025-03-03', // 228連假後
+  '2025-04-07', // 兒童清明連假後
+  '2025-06-02', // 端午連假後
+  '2025-09-30', // 教師節連假後
+  '2025-10-27', // 光復節連假後
+  '2025-10-13', // 國慶連假後
+  '2025-12-29', // 行憲連假後
+  // 2026
+  '2026-01-05', // 元旦後
+  '2026-02-23', // 春節連假後（2/22結束）
+  '2026-03-02', // 228連假後
+  '2026-04-07', // 兒童清明連假後
+  '2026-05-04', // 勞動節連假後
+  '2026-06-22', // 端午連假後
+  '2026-09-29', // 中秋+教師節連假後
+  '2026-10-12', // 國慶連假後
+  '2026-10-27', // 光復節連假後
+  '2026-12-28', // 行憲連假後
+  // 2027
+  '2027-01-04', // 元旦後
+  '2027-02-11', // 春節後
+  '2027-03-02', // 228後
+  '2027-04-07', // 兒童清明後
+  '2027-05-03', // 勞動節後
+  '2027-06-10', // 端午後
+  '2027-09-16', // 中秋後
+  '2027-09-29', // 教師節後
+  '2027-10-12', // 國慶後
+  '2027-10-27', // 光復節後
+  '2027-12-27', // 行憲後
+]);
 
 function isHoliday(ds) { return !!TW_HOLIDAYS[ds]; }
 function isMakeupDay(ds) { return !!TW_MAKEUP[ds]; }
+function isPostHoliday(ds) { return TW_POST_HOLIDAY_FIRST_DAY.has(ds); }
 function holidayName(ds) { return TW_HOLIDAYS[ds] || ''; }
 
 let supabase_client = null;
@@ -532,7 +606,7 @@ function initials(n) { return n.slice(0,2); }
 function fmtDate(y,m,d) { return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
 function isMonday(s) { return new Date(s+'T00:00:00').getDay()===1; }
 function isWeekend(s) { const d=new Date(s+'T00:00:00').getDay(); return d===0||d===6; }
-function isBlocked(s) { return isWeekend(s)||isMonday(s)||isHoliday(s); }
+function isBlocked(s) { return isWeekend(s)||isMonday(s)||isHoliday(s)||isPostHoliday(s); }
 function nowStr() {
   const d=new Date(), p=n=>String(n).padStart(2,'0');
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
@@ -638,6 +712,7 @@ function renderQuota(date) {
   if(isWeekend(date)){h+=`<div class="quota-note quota-na">週末無法申請</div>`;det.innerHTML=h;resetBtn();return;}
   if(isHoliday(date)){h+=`<div class="quota-note quota-holiday">國定假日（${holidayName(date)}）</div>`;det.innerHTML=h;resetBtn(true,'國定假日不適用');return;}
   if(isMonday(date)){h+=`<div class="quota-note quota-na">週一不適用居家辦公</div>`;det.innerHTML=h;resetBtn(true,'週一不適用');return;}
+  if(isPostHoliday(date)){h+=`<div class="quota-note quota-na">連假後第一個工作日，不適用居家辦公</div>`;det.innerHTML=h;resetBtn(true,'連假後不適用');return;}
   h+=`<div class="quota-big"><span class="quota-num" style="color:${rem===0?'var(--red)':rem<=1?'var(--amber)':'var(--green)'}">${rem}</span><span class="quota-unit">/ ${half} 個名額剩餘</span></div>
   <div class="quota-sub">部門 ${members.length} 人・當日上限 ${half} 人</div>
   <div class="meter-wrap"><div class="meter-bar"><div class="meter-fill" style="width:${pct}%;background:${mColor}"></div></div><div class="meter-label" style="color:${mColor}">${used}/${half}</div></div>`;
@@ -690,6 +765,7 @@ async function submitApply() {
   if((day===0||day===6)&&!isMakeupDay(date)){showToast('週末無法申請',true);return;}
   if(isHoliday(date)){showToast(`${holidayName(date)}為國定假日，無法申請`,true);return;}
   if(day===1){showToast('週一不適用居家辦公',true);return;}
+  if(isPostHoliday(date)){showToast('連假後第一個工作日，不適用居家辦公',true);return;}
   const half=Math.floor(members.length/2);
   if(applications.filter(a=>a.date===date&&a.status==='approved'&&a.type==='wfh').length>=half){showToast('當日名額已滿',true);return;}
   const ws=new Date(d);ws.setDate(d.getDate()-d.getDay()+1);
@@ -697,14 +773,19 @@ async function submitApply() {
   const hasWeek=applications.some(a=>{if(a.member_id!=memberId||a.status==='rejected'||a.type!=='wfh')return false;const ad=new Date(a.date+'T00:00:00');return ad>=ws&&ad<=we;});
   if(hasWeek){showToast('該成員本週已有居家辦公申請',true);return;}
   // 當週有非公假請假 → 不得申請居家辦公
-  const hasLeave=applications.some(a=>{
-    if(a.member_id!=memberId||a.status==='rejected'||a.type!=='leave')return false;
-    if(a.slot==='公假')return false;
-    const ls=new Date((a.date||a.date_start)+'T00:00:00');
-    const le=new Date((a.date_end||a.date||a.date_start)+'T00:00:00');
-    return ls<=we&&le>=ws;
+  // ws=本週一, we=本週五; 休假區間[a.date ~ a.date_end]與本週有任何交集即封鎖
+  const hasLeave = applications.some(a => {
+    if(a.member_id != memberId) return false;
+    if(a.status === 'rejected') return false;
+    if(a.type !== 'leave') return false;
+    if(a.slot === '公假') return false;          // 公假不限制
+    const leaveStart = new Date((a.date || '') + 'T00:00:00');
+    const leaveEnd   = new Date((a.date_end || a.date || '') + 'T00:00:00');
+    if(isNaN(leaveStart.getTime())) return false;
+    // 交集：休假開始 <= 本週五 AND 休假結束 >= 本週一
+    return leaveStart <= we && leaveEnd >= ws;
   });
-  if(hasLeave){showToast('該成員當週有請假紀錄（公假除外），本週無法申請居家辦公',true);return;}
+  if(hasLeave){ showToast('該成員當週有請假紀錄（公假除外），本週無法申請居家辦公', true); return; }
   if(applications.find(a=>a.member_id==memberId&&a.date===date&&a.status!=='rejected'&&a.type==='wfh')){showToast('該成員當日已申請',true);return;}
   document.getElementById('submit-btn').disabled=true;
   try {
@@ -740,6 +821,7 @@ function renderCalendar() {
     if(isHol&&!isWknd)cls+=' holiday-cell';else if(isMon&&!isWknd)cls+=' mon-cell';
     let inner=`<div class="day-n">${dd}</div>`;
     if(isHol&&!isWknd)inner+=`<div class="holiday-tag">${holidayName(ds)}</div>`;
+    else if(isPostHoliday(ds))inner+=`<div class="no-wfh-tag">連假後首日</div>`;
     else if(isMon&&!isWknd)inner+=`<div class="no-wfh-tag">週一不適用</div>`;
     // WFH apps
     const wfhApps=applications.filter(a=>a.date===ds&&a.type==='wfh');
