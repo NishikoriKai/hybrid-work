@@ -335,6 +335,7 @@ textarea{resize:vertical;min-height:70px}
         <div class="legend-item"><div class="dot" style="background:var(--green)"></div>已核准(WFH)</div>
         <div class="legend-item"><div class="dot" style="background:var(--purple)"></div>休假</div>
         <div class="legend-item"><div class="dot" style="background:var(--red)"></div>已拒絕</div>
+        <div class="legend-item"><div style="width:8px;height:8px;border-radius:2px;background:#E6F1FB;border:.5px solid #185FA5;flex-shrink:0"></div>補班日</div>
       </div>
     </div>
     <div class="cal-grid" id="cal-grid"></div>
@@ -461,24 +462,57 @@ const SUPABASE_URL = 'https://fsuxizmrlwphpmptnqtu.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzdXhpem1ybHdwaHBtcHRucXR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0MDM2MTcsImV4cCI6MjA5MTk3OTYxN30.j7qfq1HkGD_bVgixa-yrEnqQlPIJDz9ZS1cI6TS2ZkI';
 
 // ── 中華民國國定假日（2025-2026）──────────────────────────
+// ── 中華民國行政機關辦公日曆 ──────────────────────────────
+// 放假日（value 為假日名稱）；補班日單獨列出（isWorkday=true）
+// 資料來源：行政院人事行政總處公告
+
 const TW_HOLIDAYS = {
-  // 2025
-  '2025-01-01':'元旦','2025-01-27':'春節','2025-01-28':'春節','2025-01-29':'春節',
-  '2025-01-30':'春節','2025-01-31':'春節','2025-02-28':'和平紀念日',
-  '2025-04-03':'兒童節補假','2025-04-04':'兒童節/清明節','2025-05-01':'勞動節',
-  '2025-05-30':'端午節','2025-09-03':'軍人節補假','2025-10-06':'國慶日補假',
-  '2025-10-10':'國慶日','2025-10-31':'萬聖節前夕補假',
-  // 2026
-  '2026-01-01':'元旦','2026-01-02':'元旦補假',
-  '2026-02-16':'春節','2026-02-17':'春節','2026-02-18':'春節',
-  '2026-02-19':'春節','2026-02-20':'春節',
-  '2026-02-28':'和平紀念日','2026-04-03':'兒童節',
-  '2026-04-04':'清明節','2026-04-05':'清明節補假',
-  '2026-05-01':'勞動節','2026-06-19':'端午節',
-  '2026-09-26':'中秋節','2026-10-09':'國慶日補假','2026-10-10':'國慶日',
+  // ── 2025 ──
+  '2025-01-01':'元旦',
+  // 春節：1/27(一)~2/2(日)，其中1/27補班→實際放假1/28~2/2
+  // 人事行政總處公告：1/27補班，放假1/28(二)~2/4(二) 共8天
+  '2025-01-28':'春節','2025-01-29':'春節','2025-01-30':'春節',
+  '2025-01-31':'春節','2025-02-01':'春節','2025-02-02':'春節',
+  '2025-02-03':'春節補假','2025-02-04':'春節補假',
+  '2025-02-28':'和平紀念日',
+  '2025-04-03':'兒童節補假','2025-04-04':'兒童節','2025-04-05':'清明節',
+  '2025-05-01':'勞動節',
+  '2025-05-30':'端午節','2025-05-31':'端午節補假',
+  '2025-10-06':'國慶日補假','2025-10-09':'重陽節','2025-10-10':'國慶日',
+  // ── 2026 ──
+  '2026-01-01':'元旦',
+  // 春節：2026/1/28(三)除夕~2/3(二) 共7天
+  '2026-01-28':'除夕','2026-01-29':'春節','2026-01-30':'春節',
+  '2026-01-31':'春節','2026-02-01':'春節','2026-02-02':'春節',
+  '2026-02-03':'春節','2026-02-04':'春節補假',
+  '2026-02-28':'和平紀念日',
+  '2026-04-03':'兒童節','2026-04-04':'清明節','2026-04-05':'清明節補假',
+  '2026-05-01':'勞動節',
+  '2026-06-19':'端午節','2026-06-20':'端午節補假',
+  '2026-09-26':'中秋節',
+  '2026-10-09':'國慶日補假','2026-10-10':'國慶日',
+  // ── 2027 ──
+  '2027-01-01':'元旦',
+  // 春節：2027/2/15(一)~2/21(日) 共7天
+  '2027-02-15':'春節','2027-02-16':'春節','2027-02-17':'春節',
+  '2027-02-18':'春節','2027-02-19':'春節','2027-02-20':'春節',
+  '2027-02-21':'春節補假',
+  '2027-02-28':'和平紀念日',
+  '2027-04-02':'兒童節補假','2027-04-03':'兒童節','2027-04-05':'清明節',
+  '2027-05-01':'勞動節',
+  '2027-05-19':'端午節',
+  '2027-10-01':'中秋節','2027-10-10':'國慶日',
+};
+
+// 補班日：雖為週六但須上班（標示用，不影響居家辦公申請判斷）
+const TW_MAKEUP = {
+  '2025-01-18':'補班','2025-02-08':'補班',
+  '2026-01-17':'補班','2026-01-24':'補班',
+  '2027-02-13':'補班',
 };
 
 function isHoliday(ds) { return !!TW_HOLIDAYS[ds]; }
+function isMakeupDay(ds) { return !!TW_MAKEUP[ds]; }
 function holidayName(ds) { return TW_HOLIDAYS[ds] || ''; }
 
 let supabase_client = null;
@@ -653,7 +687,7 @@ async function submitApply() {
   const date=document.getElementById('apply-date').value;
   if(!date){showToast('請選擇日期',true);return;}
   const d=new Date(date+'T00:00:00'),day=d.getDay();
-  if(day===0||day===6){showToast('週末無法申請',true);return;}
+  if((day===0||day===6)&&!isMakeupDay(date)){showToast('週末無法申請',true);return;}
   if(isHoliday(date)){showToast(`${holidayName(date)}為國定假日，無法申請`,true);return;}
   if(day===1){showToast('週一不適用居家辦公',true);return;}
   const half=Math.floor(members.length/2);
@@ -662,6 +696,15 @@ async function submitApply() {
   const we=new Date(ws);we.setDate(ws.getDate()+4);
   const hasWeek=applications.some(a=>{if(a.member_id!=memberId||a.status==='rejected'||a.type!=='wfh')return false;const ad=new Date(a.date+'T00:00:00');return ad>=ws&&ad<=we;});
   if(hasWeek){showToast('該成員本週已有居家辦公申請',true);return;}
+  // 當週有非公假請假 → 不得申請居家辦公
+  const hasLeave=applications.some(a=>{
+    if(a.member_id!=memberId||a.status==='rejected'||a.type!=='leave')return false;
+    if(a.slot==='公假')return false;
+    const ls=new Date((a.date||a.date_start)+'T00:00:00');
+    const le=new Date((a.date_end||a.date||a.date_start)+'T00:00:00');
+    return ls<=we&&le>=ws;
+  });
+  if(hasLeave){showToast('該成員當週有請假紀錄（公假除外），本週無法申請居家辦公',true);return;}
   if(applications.find(a=>a.member_id==memberId&&a.date===date&&a.status!=='rejected'&&a.type==='wfh')){showToast('該成員當日已申請',true);return;}
   document.getElementById('submit-btn').disabled=true;
   try {
@@ -711,7 +754,7 @@ function renderCalendar() {
     });
     if(allApps.length>2)inner+=`<div class="more-hint">+${allApps.length-2} 人</div>`;
     inner+='</div>';
-    grid.innerHTML+=`<div class="${cls}" ${!isWknd?`onclick="selectDay('${ds}')"`:''}>${inner}</div>`;
+    grid.innerHTML+=`<div class="${cls}" ${(!isWknd||isMakeup)?`onclick="selectDay('${ds}')"`:''}>${inner}</div>`;
   }
   const rem=(7-(first+total)%7)%7;
   for(let d=1;d<=rem;d++) grid.innerHTML+=`<div class="cal-cell other"><div class="day-n">${d}</div></div>`;
@@ -832,7 +875,7 @@ async function saveEdit() {
     const date=document.getElementById('edit-date').value;
     if(!date){showToast('請選擇日期',true);return;}
     const d=new Date(date+'T00:00:00'),day=d.getDay();
-    if(day===0||day===6){showToast('週末無法申請',true);return;}
+    if((day===0||day===6)&&!isMakeupDay(date)){showToast('週末無法申請',true);return;}
     if(isHoliday(date)){showToast('國定假日不適用',true);return;}
     if(day===1){showToast('週一不適用',true);return;}
     try{
