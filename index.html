@@ -265,7 +265,7 @@ textarea{resize:vertical;min-height:70px}
       <div class="card">
         <div class="form-row">
           <label class="field-label">申請人</label>
-          <select id="apply-member"></select>
+          <select id="apply-member" onchange="onDateChange()"></select>
         </div>
         <div class="form-row">
           <label class="field-label">申請類型</label>
@@ -723,6 +723,29 @@ function renderQuota(date) {
     if(pendingList.length){h+=`<div class="mini-label">居家辦公-待審核（${pendingList.length}人）</div><div class="pill-row">`;pendingList.forEach(a=>{const m=getMember(a.member_id);if(!m)return;const av=getAv(m.id);h+=`<div class="pill pill-pending"><div class="pill-av" style="background:${av.bg};color:${av.c}">${initials(m.name)}</div>${m.name}</div>`;});h+=`</div>`;}
     if(leaveList.length){h+=`<div class="mini-label">休假（${leaveList.length}人）</div><div class="pill-row">`;leaveList.forEach(a=>{const m=getMember(a.member_id);if(!m)return;const av=getAv(m.id);h+=`<div class="pill pill-leave"><div class="pill-av" style="background:${av.bg};color:${av.c}">${initials(m.name)}</div>${m.name}(${a.slot||''})</div>`;});h+=`</div>`;}
   }
+  // 加入申請人本週剩餘 WFH 額度提示
+  const memberId = parseInt(document.getElementById('apply-member').value);
+  if(memberId) {
+    const d2 = new Date(date+'T00:00:00');
+    const ws2 = new Date(d2); ws2.setDate(d2.getDate()-d2.getDay()+1);
+    const we2 = new Date(ws2); we2.setDate(ws2.getDate()+4);
+    const weekWfh2 = applications.filter(a => {
+      if(a.member_id != memberId || a.status === 'rejected' || a.type !== 'wfh') return false;
+      const ad = new Date(a.date+'T00:00:00');
+      return ad >= ws2 && ad <= we2;
+    });
+    const usedDays2 = weekWfh2.reduce((sum,a) => sum + (a.slot==='全天'?1.0:0.5), 0);
+    const remainDays2 = Math.max(0, 1.0 - usedDays2);
+    const memberName = getMember(memberId)?.name || '';
+    if(remainDays2 <= 0) {
+      h += `<div class="quota-note quota-full" style="margin-top:8px">⚠️ ${memberName} 本週 WFH 額度已用完</div>`;
+    } else if(remainDays2 < 1.0) {
+      h += `<div class="quota-note quota-warn" style="margin-top:8px">📋 ${memberName} 本週剩餘 <strong>半日</strong> WFH 額度</div>`;
+    } else {
+      h += `<div class="quota-note quota-ok" style="margin-top:8px">✓ ${memberName} 本週尚未使用 WFH 額度</div>`;
+    }
+  }
+
   det.innerHTML=h;
   const btn=document.getElementById('submit-btn');
   btn.disabled=rem===0;btn.textContent=rem===0?'當日名額已滿':'送出申請';
@@ -770,8 +793,31 @@ async function submitApply() {
   if(applications.filter(a=>a.date===date&&a.status==='approved'&&a.type==='wfh').length>=half){showToast('當日名額已滿',true);return;}
   const ws=new Date(d);ws.setDate(d.getDate()-d.getDay()+1);
   const we=new Date(ws);we.setDate(ws.getDate()+4);
-  const hasWeek=applications.some(a=>{if(a.member_id!=memberId||a.status==='rejected'||a.type!=='wfh')return false;const ad=new Date(a.date+'T00:00:00');return ad>=ws&&ad<=we;});
-  if(hasWeek){showToast('該成員本週已有居家辦公申請',true);return;}
+  // 計算本週已使用的 WFH 額度（全天=1.0，上/下半日=0.5）
+  const weekWfh = applications.filter(a => {
+    if(a.member_id != memberId || a.status === 'rejected' || a.type !== 'wfh') return false;
+    const ad = new Date(a.date + 'T00:00:00');
+    return ad >= ws && ad <= we;
+  });
+  const usedDays = weekWfh.reduce((sum, a) => sum + (a.slot === '全天' ? 1.0 : 0.5), 0);
+  const applyDays = applySlot === '全天' ? 1.0 : 0.5;
+  if(usedDays + applyDays > 1.0) {
+    const remaining = 1.0 - usedDays;
+    if(remaining <= 0) {
+      showToast('該成員本週居家辦公額度已用完（每週上限 1 日）', true);
+    } else {
+      showToast(`本週剩餘額度為半日，無法申請全天居家辦公`, true);
+    }
+    return;
+  }
+  // 同一天不能重複申請相同或衝突時段
+  const sameDay = weekWfh.filter(a => a.date === date);
+  if(sameDay.length > 0) {
+    const takenSlots = sameDay.map(a => a.slot);
+    if(takenSlots.includes('全天')) { showToast('該日已申請全天居家辦公', true); return; }
+    if(applySlot === '全天') { showToast('該日已有半日申請，無法再申請全天', true); return; }
+    if(takenSlots.includes(applySlot)) { showToast(`該日「${applySlot}」已申請過`, true); return; }
+  }
   // 當週有非公假請假 → 不得申請居家辦公
   // ws=本週一, we=本週五; 休假區間[a.date ~ a.date_end]與本週有任何交集即封鎖
   const hasLeave = applications.some(a => {
